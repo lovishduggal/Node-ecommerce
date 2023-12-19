@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { getAllBrands } from '../controller/Brand.js';
+import { createBrand, getAllBrands } from '../controller/Brand.js';
 
 const router = Router();
 
-router.get('/', getAllBrands);
+router.get('/', getAllBrands).post('/', createBrand);
 
 export default router;

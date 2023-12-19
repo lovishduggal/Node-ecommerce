@@ -4,18 +4,30 @@ import { main } from './services/config/db.js';
 import productsRouter from './routes/Products.js';
 import brandsRouter from './routes/Brands.js';
 import categoriesRouter from './routes/Categories.js';
+import userRouter from './routes/User.js';
+import authRouter from './routes/Auth.js';
 import { ErrorMiddleware } from './middleware/error.js';
+import cors from 'cors';
+import morgan from 'morgan';
 config();
 
 const server = express();
 
 //* Middlewares
+server.use(
+    cors({
+        exposedHeaders: 'X-Total-Count',
+    })
+);
+server.use(morgan('dev'));
 server.use(express.json());
 
 //* Routes
-server.use('/api/v1/products', productsRouter);
-server.use('/api/v1/brands', brandsRouter);
-server.use('/api/v1/categories', categoriesRouter);
+server.use('/products', productsRouter);
+server.use('/brands', brandsRouter);
+server.use('/categories', categoriesRouter);
+server.use('/users', userRouter);
+server.use('/auth', authRouter);
 
 //* Establish the db connection
 main().catch((err) => console.log(err));
