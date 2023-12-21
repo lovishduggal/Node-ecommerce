@@ -12,7 +12,7 @@ export const getAllProducts = catchAsyncError(async (req, res) => {
     //* sort = {_sort: "price", _order="desc"}
     //* pagination = {_page:1, _limit=10} => _page=1&_limit=10
     //TODO: We have to try with multiple category and brands after change in front-end
-    let query = Product.find({});
+    let query = Product.find({ deleted: { $ne: true } });
     if (req.query.category) {
         query = query.find({ category: req.query.category });
     }
@@ -29,7 +29,9 @@ export const getAllProducts = catchAsyncError(async (req, res) => {
     }
     //TODO: How to get sort on discounted Price not on Actual Price
     const products = await query.exec();
-    const totalCount = await Product.find({}).countDocuments();
+    const totalCount = await Product.find({
+        deleted: { $ne: true },
+    }).countDocuments();
     return res.status(200).set('X-Total-Count', totalCount).json(products);
 });
 

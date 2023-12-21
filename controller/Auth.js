@@ -10,7 +10,7 @@ export const createUser = catchAsyncError(async (req, res) => {
 export const loginUser = catchAsyncError(async (req, res, next) => {
     const user = await User.findOne(
         { email: req.body.email },
-        'id name email password'
+        'id name email password role'
     );
     if (!user) return next(new ErrorHandler('Invalid credentials', 401));
 
