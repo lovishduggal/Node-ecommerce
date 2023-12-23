@@ -10,7 +10,7 @@ const userSchema = new Schema(
         orders: { type: [Schema.Types.Mixed] },
         // for addresses, we can make a separate Schema like orders. but in this case we are fine
         name: { type: String },
-        salt: Buffer,
+        salt: String,
         resetPasswordToken: { type: String, default: '' },
     },
     { timestamps: true }

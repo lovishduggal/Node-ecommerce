@@ -1,21 +1,46 @@
 import { catchAsyncError } from '../middleware/catchAsyncError.js';
 import { User } from '../model/User.js';
-import { ErrorHandler } from '../services/utils/errorHandler.js';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 export const createUser = catchAsyncError(async (req, res) => {
-    const user = await User.create(req.body);
-    return res.status(201).json(user);
+    const salt = crypto.randomBytes(16).toString('hex');
+    crypto.pbkdf2(
+        req.body.password,
+        salt,
+        310000,
+        32,
+        'sha256',
+        async function (err, hashedPassword) {
+            if (err) return new Error(err.message);
+            hashedPassword = hashedPassword.toString('hex');
+            try {
+                const user = await User.create({
+                    ...req.body,
+                    password: hashedPassword,
+                    salt,
+                });
+                const token = jwt.sign(
+                    { id: user.id, role: user.role },
+                    process.env.SECRET_KEY
+                );
+                req.login(token, function (err) {
+                    if (err) throw new Error(err.message);
+                    return res.status(201).json(token);
+                });
+            } catch (err) {
+                return res
+                    .status(500)
+                    .json({ success: false, message: err.message });
+            }
+        }
+    );
 });
 
 export const loginUser = catchAsyncError(async (req, res, next) => {
-    const user = await User.findOne(
-        { email: req.body.email },
-        'id name email password role'
-    );
-    if (!user) return next(new ErrorHandler('Invalid credentials', 401));
+    return res.status(201).json(req.user);
+});
 
-    //*  this is just temporary, we will use strong password
-    if (!(user.password === req.body.password))
-        return next(new ErrorHandler('Invalid credentials', 401));
-    return res.status(201).json(user);
+export const checkUser = catchAsyncError(async (req, res, next) => {
+    return res.status(201).json(req.user);
 });
