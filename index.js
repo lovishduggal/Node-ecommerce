@@ -21,11 +21,15 @@ import { ExtractJwt } from 'passport-jwt';
 import isAuth from './middleware/isAuth.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+import { cookieExtractor } from './services/utils/cookieExt.js';
+
 config();
 
 const server = express();
 
 //* Middlewares
+server.use(express.static('build'));
 server.use(
     cors({
         exposedHeaders: 'X-Total-Count',
@@ -33,10 +37,11 @@ server.use(
 );
 server.use(morgan('dev'));
 server.use(express.json());
+server.use(cookieParser());
 
 //* JWT Options:
 const opts = {};
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = process.env.SECRET_KEY;
 
 //Passport and JWT middlewares:
@@ -51,8 +56,10 @@ server.use(passport.authenticate('session'));
 passport.use(
     'local',
     new LocalStrategy(
-        catchAsyncError(async function (username, password, next) {
-            const user = await User.findOne({ email: username });
+        { usernameField: 'email' },
+        catchAsyncError(async function (email, password, next) {
+            const user = await User.findOne({ email });
+            console.log(user);
             if (!user) return next(null, false);
             crypto.pbkdf2(
                 password,
@@ -72,7 +79,11 @@ passport.use(
                             { id: user.id, role: user.role },
                             process.env.SECRET_KEY
                         );
-                        return next(null, token);
+                        return next(null, {
+                            id: user.id,
+                            role: user.role,
+                            token,
+                        });
                     } else next(null, false);
                 }
             );
@@ -84,8 +95,8 @@ passport.use(
     new JwtStrategy(
         opts,
         catchAsyncError(async function (jwt_payload, next) {
-            console.log({ jwt_payload });
             const user = await User.findOne({ _id: jwt_payload.id });
+            console.log('hii from JwtStrategy user', user);
             if (!user) return next(null, false);
             else {
                 return next(null, user);
@@ -94,14 +105,13 @@ passport.use(
     )
 );
 passport.serializeUser(function (user, cb) {
-    console.log('hii from serialized user');
-    console.log(user);
+    console.log('hii from serialized user', user);
     process.nextTick(function () {
-        return cb(null, { id: user.id, role: user.role });
+        return cb(null, { id: user.id, role: user.role, token: user.token });
     });
 });
 passport.deserializeUser(function (user, cb) {
-    console.log('hii from deserializing user lovish');
+    console.log('hii from deserializing user lovish', user);
     process.nextTick(function () {
         return cb(null, user);
     });
@@ -109,12 +119,12 @@ passport.deserializeUser(function (user, cb) {
 
 //* Routes
 server.use('/products', isAuth(), productsRouter);
-server.use('/brands', brandsRouter);
-server.use('/categories', categoriesRouter);
-server.use('/users', userRouter);
+server.use('/brands', isAuth(), brandsRouter);
+server.use('/categories', isAuth(), categoriesRouter);
+server.use('/users', isAuth(), userRouter);
 server.use('/auth', authRouter);
-server.use('/cart', cartRouter);
-server.use('/orders', ordersRouter);
+server.use('/cart', isAuth(), cartRouter);
+server.use('/orders', isAuth(), ordersRouter);
 
 //* Establish the db connection
 main().catch((err) => console.log(err));

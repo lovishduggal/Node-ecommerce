@@ -24,10 +24,19 @@ export const createUser = catchAsyncError(async (req, res) => {
                     { id: user.id, role: user.role },
                     process.env.SECRET_KEY
                 );
-                req.login(token, function (err) {
-                    if (err) throw new Error(err.message);
-                    return res.status(201).json(token);
-                });
+                req.login(
+                    { id: user.id, role: user.role, token },
+                    function (err) {
+                        if (err) throw new Error(err.message);
+                        return res
+                            .status(201)
+                            .cookie('jwt', token, {
+                                expires: new Date(Date.now() + 3600000),
+                                httpOnly: true,
+                            })
+                            .json(token);
+                    }
+                );
             } catch (err) {
                 return res
                     .status(500)
@@ -38,7 +47,13 @@ export const createUser = catchAsyncError(async (req, res) => {
 });
 
 export const loginUser = catchAsyncError(async (req, res, next) => {
-    return res.status(201).json(req.user);
+    return res
+        .status(201)
+        .cookie('jwt', req.user.token, {
+            expires: new Date(Date.now() + 3600000),
+            httpOnly: true,
+        })
+        .json(req.user.token);
 });
 
 export const checkUser = catchAsyncError(async (req, res, next) => {

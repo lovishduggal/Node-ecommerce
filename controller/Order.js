@@ -7,7 +7,7 @@ export const createOrder = catchAsyncError(async (req, res) => {
 });
 
 export const getOrderByUser = catchAsyncError(async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.user;
     console.log(id);
     const orders = await Order.find({ user: id });
     return res.status(200).json(orders);

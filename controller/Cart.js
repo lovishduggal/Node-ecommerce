@@ -2,13 +2,16 @@ import { catchAsyncError } from '../middleware/catchAsyncError.js';
 import { Cart } from '../model/Cart.js';
 
 export const addToCart = catchAsyncError(async (req, res) => {
-    const cart = await (await Cart.create(req.body)).populate('product');
+    const { id } = req.user;
+    const cart = await (
+        await Cart.create({ ...req.body, user: id })
+    ).populate('product');
     return res.status(201).json(cart);
 });
 
 export const getCartByUser = catchAsyncError(async (req, res) => {
-    const { user } = req.query;
-    const cartItems = await Cart.find({ user })
+    const { id } = req.user;
+    const cartItems = await Cart.find({ user: id })
         .populate('user')
         .populate('product');
     return res.status(200).json(cartItems);

@@ -8,6 +8,7 @@ export const createProduct = catchAsyncError(async (req, res) => {
 });
 
 export const getAllProducts = catchAsyncError(async (req, res) => {
+    console.log('getProductById', req.user);
     //* filter = {"category": ["smartphone", "laptops"]};
     //* sort = {_sort: "price", _order="desc"}
     //* pagination = {_page:1, _limit=10} => _page=1&_limit=10

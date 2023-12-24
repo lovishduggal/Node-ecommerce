@@ -11,7 +11,7 @@ const router = Router();
 
 router
     .post('/', createOrder)
-    .get('/user/:id', getOrderByUser)
+    .get('/own', getOrderByUser)
     .get('/', getAllOrders)
     .delete('/:id', deleteOrder)
     .patch('/:id', updateOder);
