@@ -34,7 +34,7 @@ export const createUser = catchAsyncError(async (req, res) => {
                                 expires: new Date(Date.now() + 3600000),
                                 httpOnly: true,
                             })
-                            .json(token);
+                            .json({ id: user.id, role: user.role });
                     }
                 );
             } catch (err) {
@@ -53,9 +53,10 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
             expires: new Date(Date.now() + 3600000),
             httpOnly: true,
         })
-        .json(req.user.token);
+        .json({ id: req.user.id, role: req.user.role });
 });
 
-export const checkUser = catchAsyncError(async (req, res, next) => {
-    return res.status(201).json(req.user);
+export const checkAuth = catchAsyncError(async (req, res, next) => {
+    if (!req.user) return res.status(401);
+    return res.status(201).json({ id: req.user.id, role: req.user.role });
 });
