@@ -129,39 +129,51 @@ server.use('/cart', isAuth(), cartRouter);
 server.use('/orders', isAuth(), ordersRouter);
 
 //* Payments:
-// This is a public sample test API key.
-// Don’t submit any personally identifiable information in requests made with this key.
-// Sign in to see your own test API key embedded in code samples.
 const stripeInstance = stripe(process.env.STRIPE_SECRET_KEY);
 
-server.post('/create-checkout-session', async (req, res) => {
-    const { products } = req.body;
-    console.log(products);
-    const lineItems = products.map((product) => ({
-        price_data: {
-            currency: 'inr',
-            product_data: {
-                name: product.product.title,
-                images: [product.product.thumbnail],
-            },
-            unit_amount: product.product.price * 100,
-        },
-        quantity: product.quantity,
-    }));
+server.post('/create-payment-intent', async (req, res) => {
+    const { totalAmount } = req.body;
+
     const customer = await stripeInstance.customers.create({
-        //! Need to add name and address, only then stripe will work
-        email: products[0].user.email,
+        name: 'lovish',
+        email: 'lovishd@gmail.com',
+        shipping: {
+            name: 'lovish duggal',
+            address: {
+                line1: '510 Townsend St',
+                postal_code: '98140',
+                city: 'San Francisco',
+                state: 'CA',
+                country: 'US',
+            },
+        },
     });
-    const session = await stripeInstance.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: lineItems,
+
+    // Create a PaymentIntent with the order amount and currency
+    const paymentIntent = await stripeInstance.paymentIntents.create({
+        description: 'Software development services',
+        shipping: {
+            name: 'Jenny Rosen',
+            address: {
+                line1: '510 Townsend St',
+                postal_code: '98140',
+                city: 'San Francisco',
+                state: 'CA',
+                country: 'US',
+            },
+        },
+        amount: totalAmount * 100,
+        currency: 'inr',
         customer: customer.id,
-        mode: 'payment',
-        billing_address_collection: 'auto', // Collect customer billing address automatically
-        success_url: 'http://localhost:3000/success',
-        cancel_url: 'http://localhost:3000/cancel',
+        description: 'Software development services',
+        automatic_payment_methods: {
+            enabled: true,
+        },
     });
-    return res.json({ id: session.id });
+
+    res.send({
+        clientSecret: paymentIntent.client_secret,
+    });
 });
 
 //* Establish the db connection
