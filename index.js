@@ -132,40 +132,38 @@ server.use('/orders', isAuth(), ordersRouter);
 const stripeInstance = stripe(process.env.STRIPE_SECRET_KEY);
 
 server.post('/create-payment-intent', async (req, res) => {
-    const { totalAmount } = req.body;
-
+    const { totalAmount, selectedAddress } = req.body;
+    const { name, email, street, pinCode, city, state } = selectedAddress;
     const customer = await stripeInstance.customers.create({
-        name: 'lovish',
-        email: 'lovishd@gmail.com',
+        name,
+        email,
         shipping: {
-            name: 'lovish duggal',
+            name,
             address: {
-                line1: '510 Townsend St',
-                postal_code: '98140',
-                city: 'San Francisco',
-                state: 'CA',
+                line1: street,
+                postal_code: pinCode,
+                city,
+                state,
                 country: 'US',
             },
         },
     });
-
-    // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripeInstance.paymentIntents.create({
         description: 'Software development services',
-        shipping: {
-            name: 'Jenny Rosen',
-            address: {
-                line1: '510 Townsend St',
-                postal_code: '98140',
-                city: 'San Francisco',
-                state: 'CA',
-                country: 'US',
-            },
-        },
         amount: totalAmount * 100,
         currency: 'inr',
         customer: customer.id,
-        description: 'Software development services',
+        shipping: {
+            name,
+            address: {
+                line1: street,
+                postal_code: pinCode,
+                city,
+                state,
+                country: 'US', //I have to put US because, test card is the US card.
+            },
+        },
+        description: 'Ecommerce services',
         automatic_payment_methods: {
             enabled: true,
         },
