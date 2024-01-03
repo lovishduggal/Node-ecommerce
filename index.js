@@ -37,9 +37,9 @@ server.use(
     })
 );
 server.use(morgan('dev'));
+// server.use(express.raw({ type: 'application/json' }));
 server.use(express.json());
 server.use(cookieParser());
-server.use(express.raw({ type: 'application/json' }));
 
 //* JWT Options:
 const opts = {};
@@ -144,7 +144,6 @@ server.post('/create-payment-intent', async (req, res) => {
                 postal_code: pinCode,
                 city,
                 state,
-                country: 'US',
             },
         },
     });
@@ -160,7 +159,6 @@ server.post('/create-payment-intent', async (req, res) => {
                 postal_code: pinCode,
                 city,
                 state,
-                country: 'US', //I have to put US because, test card is the US card.
             },
         },
         description: 'Ecommerce services',
@@ -173,6 +171,45 @@ server.post('/create-payment-intent', async (req, res) => {
         clientSecret: paymentIntent.client_secret,
     });
 });
+//* Webhook
+const endpointSecret =
+    'whsec_5655ee8568c9d0fa9a5033900a4aff9b826d4cb7d3ba1d772dd7bbd36ae594b7';
+
+server.post(
+    '/webhook',
+    express.raw({ type: 'application/json' }),
+    (request, response) => {
+        const sig = request.headers['stripe-signature'];
+
+        let event;
+
+        try {
+            event = stripe.webhooks.constructEvent(
+                request.body,
+                sig,
+                endpointSecret
+            );
+        } catch (err) {
+            response.status(400).send(`Webhook Error: ${err.message}`);
+            return;
+        }
+
+        // Handle the event
+        switch (event.type) {
+            case 'payment_intent.succeeded':
+                const paymentIntentSucceeded = event.data.object;
+                console.log(event.type);
+                // Then define and call a function to handle the event payment_intent.succeeded
+                break;
+            // ... handle other event types
+            default:
+                console.log(`Unhandled event type ${event.type}`);
+        }
+
+        // Return a 200 response to acknowledge receipt of the event
+        response.send();
+    }
+);
 
 //* Establish the db connection
 main().catch((err) => console.log(err));
