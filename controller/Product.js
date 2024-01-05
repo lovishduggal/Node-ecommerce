@@ -8,7 +8,6 @@ export const createProduct = catchAsyncError(async (req, res) => {
 });
 
 export const getAllProducts = catchAsyncError(async (req, res) => {
-    console.log('getProductById', req.user);
     //* filter = {"category": ["smartphone", "laptops"]};
     //* sort = {_sort: "price", _order="desc"}
     //* pagination = {_page:1, _limit=10} => _page=1&_limit=10
@@ -48,7 +47,6 @@ export const updateProduct = catchAsyncError(async (req, res, next) => {
     const product = await Product.findByIdAndUpdate(id, req.body, {
         new: true,
     });
-    console.log(product);
     if (!product)
         return next(new ErrorHandler('Product not found or updated', 404));
     return res.status(200).json(product);

@@ -29,6 +29,43 @@ config();
 
 const server = express();
 
+//* Webhook
+const endpointSecret = process.env.END_POINT_SECRET;
+server.post(
+    '/webhook',
+    express.raw({ type: 'application/json' }),
+    (request, response) => {
+        const sig = request.headers['stripe-signature'];
+
+        let event;
+
+        try {
+            event = stripe.webhooks.constructEvent(
+                request.body,
+                sig,
+                endpointSecret
+            );
+        } catch (err) {
+            response.status(400).send(`Webhook Error: ${err.message}`);
+            return;
+        }
+
+        // Handle the event
+        switch (event.type) {
+            case 'payment_intent.succeeded':
+                const paymentIntentSucceeded = event.data.object;
+                // Then define and call a function to handle the event payment_intent.succeeded
+                break;
+            // ... handle other event types
+            default:
+                console.log(`Unhandled event type ${event.type}`);
+        }
+
+        // Return a 200 response to acknowledge receipt of the event
+        response.send();
+    }
+);
+
 //* Middlewares
 server.use(express.static('build'));
 server.use(
@@ -37,7 +74,6 @@ server.use(
     })
 );
 server.use(morgan('dev'));
-// server.use(express.raw({ type: 'application/json' }));
 server.use(express.json());
 server.use(cookieParser());
 
@@ -49,7 +85,7 @@ opts.secretOrKey = process.env.SECRET_KEY;
 //Passport and JWT middlewares:
 server.use(
     session({
-        secret: 'keyboard cat',
+        secret: process.env.SESSION_SECRET_KEY,
         resave: false, // don't save session if unmodified
         saveUninitialized: false, // don't create session until something stored
     })
@@ -61,7 +97,6 @@ passport.use(
         { usernameField: 'email' },
         catchAsyncError(async function (email, password, next) {
             const user = await User.findOne({ email });
-            console.log(user);
             if (!user) return next(null, false);
             crypto.pbkdf2(
                 password,
@@ -98,7 +133,6 @@ passport.use(
         opts,
         catchAsyncError(async function (jwt_payload, next) {
             const user = await User.findOne({ _id: jwt_payload.id });
-            console.log('hii from JwtStrategy user', user);
             if (!user) return next(null, false);
             else {
                 return next(null, user);
@@ -107,13 +141,11 @@ passport.use(
     )
 );
 passport.serializeUser(function (user, cb) {
-    console.log('hii from serialized user', user);
     process.nextTick(function () {
         return cb(null, { id: user.id, role: user.role, token: user.token });
     });
 });
 passport.deserializeUser(function (user, cb) {
-    console.log('hii from deserializing user lovish', user);
     process.nextTick(function () {
         return cb(null, user);
     });
@@ -171,45 +203,6 @@ server.post('/create-payment-intent', async (req, res) => {
         clientSecret: paymentIntent.client_secret,
     });
 });
-//* Webhook
-const endpointSecret =
-    'whsec_5655ee8568c9d0fa9a5033900a4aff9b826d4cb7d3ba1d772dd7bbd36ae594b7';
-
-server.post(
-    '/webhook',
-    express.raw({ type: 'application/json' }),
-    (request, response) => {
-        const sig = request.headers['stripe-signature'];
-
-        let event;
-
-        try {
-            event = stripe.webhooks.constructEvent(
-                request.body,
-                sig,
-                endpointSecret
-            );
-        } catch (err) {
-            response.status(400).send(`Webhook Error: ${err.message}`);
-            return;
-        }
-
-        // Handle the event
-        switch (event.type) {
-            case 'payment_intent.succeeded':
-                const paymentIntentSucceeded = event.data.object;
-                console.log(event.type);
-                // Then define and call a function to handle the event payment_intent.succeeded
-                break;
-            // ... handle other event types
-            default:
-                console.log(`Unhandled event type ${event.type}`);
-        }
-
-        // Return a 200 response to acknowledge receipt of the event
-        response.send();
-    }
-);
 
 //* Establish the db connection
 main().catch((err) => console.log(err));
@@ -217,6 +210,6 @@ main().catch((err) => console.log(err));
 //* Error handler middleware
 server.use(ErrorMiddleware);
 
-server.listen(8080, () => {
+server.listen(process.env.PORT, () => {
     console.log('listening on port');
 });

@@ -2,7 +2,6 @@ import { catchAsyncError } from '../middleware/catchAsyncError.js';
 import { Cart } from '../model/Cart.js';
 
 export const addToCart = catchAsyncError(async (req, res) => {
-    console.log(req);
     const { id } = req.user;
     const cart = await (
         await Cart.create({ ...req.body, user: id })

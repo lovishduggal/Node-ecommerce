@@ -4,7 +4,6 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
 export const createUser = catchAsyncError(async (req, res) => {
-    console.log(req);
     const salt = crypto.randomBytes(16).toString('hex');
     crypto.pbkdf2(
         req.body.password,
