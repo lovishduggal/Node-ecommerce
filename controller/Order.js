@@ -1,8 +1,17 @@
 import { catchAsyncError } from '../middleware/catchAsyncError.js';
 import { Order } from '../model/Order.js';
+import { User } from '../model/User.js';
+import { invoiceTemplate } from '../services/utils/invoiceTemplate.js';
+import { sendMail } from '../services/utils/sendEmail.js';
 
 export const createOrder = catchAsyncError(async (req, res) => {
     const order = await Order.create(req.body);
+    const user = await User.findById(order.user);
+    sendMail({
+        to: user.email,
+        html: invoiceTemplate(order),
+        subject: 'Order Received',
+    });
     return res.status(201).json(order);
 });
 

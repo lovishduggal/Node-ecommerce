@@ -58,6 +58,16 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
         .json({ id: req.user.id, role: req.user.role });
 });
 
+export const logout = catchAsyncError(async (req, res, next) => {
+    return res
+        .status(200)
+        .cookie('jwt', null, {
+            expires: new Date(Date.now()),
+            httpOnly: true,
+        })
+        .json({ success: true, message: 'Successfully logout' });
+});
+
 export const checkAuth = catchAsyncError(async (req, res, next) => {
     if (!req.user) return res.status(401);
     return res.status(201).json({ id: req.user.id, role: req.user.role });
@@ -103,7 +113,7 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
             user.password = hashedPassword.toString('hex');
             user.resetPasswordToken = undefined;
             try {
-                await user.save(); 
+                await user.save();
                 const to = email;
                 const subject = 'Password has reset successfully for Ecom';
                 const html = `<p>Congrats, your password has reset successfully</p>`;
