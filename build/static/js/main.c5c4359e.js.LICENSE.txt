@@ -119,14 +119,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-//! On server we will remove user session info.
-
-//! TODO: Implementation on backend with email
-
-//! TODO: It will based on server response of backend
-
 //! TODO: Server will filter deleted products
-
-//! TODO: Server will filter deleted products in case of non-admin
 
 //! We will add payment section when we work on backend

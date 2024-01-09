@@ -24,11 +24,18 @@ import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import { cookieExtractor } from './services/utils/cookieExt.js';
 import stripe from 'stripe';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 config();
 
 const server = express();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+console.log(`${__dirname + path.resolve('build')}`);
+server.use(express.static(path.resolve(__dirname, 'build')));
 //* Webhook
 const endpointSecret = process.env.END_POINT_SECRET;
 server.post(
@@ -67,7 +74,7 @@ server.post(
 );
 
 //* Middlewares
-server.use(express.static('build'));
+
 server.use(
     cors({
         exposedHeaders: 'X-Total-Count',

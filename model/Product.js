@@ -33,10 +33,15 @@ const productSchema = new Schema({
 });
 
 const virtualId = productSchema.virtual('id');
-
 virtualId.get(function () {
     return this._id;
 });
+
+// const virtualDiscountPrice = productSchema.virtual('discountPrice');
+// virtualDiscountPrice.get(function () {
+//     return Math.round(this.price * (1 - this.discountPercentage / 100));
+// });
+
 productSchema.set('toJSON', {
     virtuals: true,
     versionKey: false,
