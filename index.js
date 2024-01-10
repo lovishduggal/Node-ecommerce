@@ -27,6 +27,8 @@ import stripe from 'stripe';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { log } from 'console';
+import { Order } from './model/Order.js';
 
 config();
 
@@ -34,14 +36,13 @@ const server = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-console.log(`${__dirname + path.resolve('build')}`);
 server.use(express.static(path.resolve(__dirname, 'build')));
 //* Webhook
 const endpointSecret = process.env.END_POINT_SECRET;
 server.post(
     '/webhook',
     express.raw({ type: 'application/json' }),
-    (request, response) => {
+    async (request, response) => {
         const sig = request.headers['stripe-signature'];
 
         let event;
@@ -61,7 +62,11 @@ server.post(
         switch (event.type) {
             case 'payment_intent.succeeded':
                 const paymentIntentSucceeded = event.data.object;
-                // Then define and call a function to handle the event payment_intent.succeeded
+                const order = await Order.findById(
+                    paymentIntentSucceeded.metadata.orderId
+                );
+                order.paymentStatus = 'received';
+                await order.save();
                 break;
             // ... handle other event types
             default:
@@ -166,12 +171,15 @@ server.use('/users', isAuth(), userRouter);
 server.use('/auth', authRouter);
 server.use('/cart', isAuth(), cartRouter);
 server.use('/orders', isAuth(), ordersRouter);
+server.get('*', (req, res) =>
+    res.sendFile(path.resolve(__dirname, 'build', 'index.html'))
+);
 
 //* Payments:
 const stripeInstance = stripe(process.env.STRIPE_SECRET_KEY);
 
 server.post('/create-payment-intent', async (req, res) => {
-    const { totalAmount, selectedAddress } = req.body;
+    const { totalAmount, selectedAddress, id } = req.body;
     const { name, email, street, pinCode, city, state } = selectedAddress;
     const customer = await stripeInstance.customers.create({
         name,
@@ -203,6 +211,9 @@ server.post('/create-payment-intent', async (req, res) => {
         description: 'Ecommerce services',
         automatic_payment_methods: {
             enabled: true,
+        },
+        metadata: {
+            orderId: id,
         },
     });
 

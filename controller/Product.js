@@ -21,8 +21,6 @@ export const getAllProducts = catchAsyncError(async (req, res) => {
         condition.deleted = { $ne: true };
     }
     let query = Product.find(condition);
-
-    console.log(req.query.category);
     if (req.query.category) {
         query = query.find({
             category: { $in: req.query.category.split(',') },
@@ -53,9 +51,13 @@ export const getProductById = catchAsyncError(async (req, res, next) => {
 
 export const updateProduct = catchAsyncError(async (req, res, next) => {
     const { id } = req.params;
-    const product = await Product.findByIdAndUpdate(id, req.body, {
-        new: true,
-    });
+    const product = await Product.findByIdAndUpdate(
+        id,
+        { ...req.body, deleted: req.body.deleted ? true : false },
+        {
+            new: true,
+        }
+    );
     if (!product)
         return next(new ErrorHandler('Product not found or updated', 404));
     product.discountPrice = Math.round(
