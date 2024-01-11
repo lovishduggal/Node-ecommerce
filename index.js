@@ -34,9 +34,6 @@ config();
 
 const server = express();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-server.use(express.static(path.resolve(__dirname, 'build')));
 //* Webhook
 const endpointSecret = process.env.END_POINT_SECRET;
 server.post(
@@ -77,6 +74,10 @@ server.post(
         response.send();
     }
 );
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+server.use(express.static(path.resolve(__dirname, 'build')));
 
 //* Middlewares
 
