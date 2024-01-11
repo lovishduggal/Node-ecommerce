@@ -34,21 +34,6 @@ config();
 
 const server = express();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-server.use(express.static(path.resolve(__dirname, 'build')));
-
-//* Middlewares
-
-server.use(
-    cors({
-        exposedHeaders: 'X-Total-Count',
-    })
-);
-server.use(morgan('dev'));
-server.use(express.json());
-server.use(cookieParser());
-
 //* Webhook
 const endpointSecret = process.env.END_POINT_SECRET;
 server.post(
@@ -87,6 +72,21 @@ server.post(
         response.send();
     }
 );
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+server.use(express.static(path.resolve(__dirname, 'build')));
+
+//* Middlewares
+
+server.use(
+    cors({
+        exposedHeaders: 'X-Total-Count',
+    })
+);
+server.use(morgan('dev'));
+server.use(express.json());
+server.use(cookieParser());
 
 //* JWT Options:
 const opts = {};
