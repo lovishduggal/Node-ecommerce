@@ -163,7 +163,7 @@ passport.deserializeUser(function (user, cb) {
 });
 
 //* Routes
-server.use('/products', isAuth(), productsRouter);
+server.use('/products', productsRouter);
 server.use('/brands', isAuth(), brandsRouter);
 server.use('/categories', isAuth(), categoriesRouter);
 server.use('/users', isAuth(), userRouter);
